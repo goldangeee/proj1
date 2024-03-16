@@ -6,7 +6,7 @@ import pandas as pd
 
 # 상단에 타이틀과 설명을 배치합니다.
 st.title("My ideal region")
-st.write("지역을 클릭해서 지표를 확인해주세요")
+st.write("왼쪽 사이드바에서 버튼을 선택해주세요")
 
 # 대한민국 지도 경계 데이터를 불러옵니다.
 with open("SIDO_MAP_2022_cp949.json", "r", encoding='cp949') as f:
@@ -29,6 +29,11 @@ filtered_pm_df = pm_df[(pm_df['구분(1)'] == pm_df['구분(2)']) | (pm_df['구�
 # 필요한 컬럼만 선택합니다. 여기서는 '구분(1)', '구분(2)', '2023.07' 컬럼을 선택합니다.
 res_pm_df = filtered_pm_df[['구분(1)', '구분(2)', '2023.07']]
 
+# 안전한 숫자 변환 시도
+res_pm_df['2023.07'] = pd.to_numeric(res_pm_df['2023.07'], errors='coerce')
+
+# NaN 값을 제거
+res_pm_df.dropna(subset=['2023.07'], inplace=True)
 ###################################################################################
 
 # 세션 상태에 'show_density' 속성이 없으면 False로 초기화합니다.
@@ -74,7 +79,7 @@ elif st.session_state.show_pm:
         data=res_pm_df,
         columns=['구분(1)', '2023.07'],  
         key_on='feature.properties.CTP_KOR_NM',
-        fill_color='BuGn',  # 색상 팔레트
+        fill_color='YlOrRd',  # 색상 팔레트
         fill_opacity=0.7,
         line_opacity=0.2,
         legend_name='PM2.5 단위는 [마이크로그램/m^3]'
