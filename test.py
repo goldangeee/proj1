@@ -8,6 +8,9 @@ import pandas as pd
 # 상단에 타이틀과 설명을 배치
 st.title("My ideal region")
 st.write("왼쪽 사이드바에서 원하는 버튼을 클릭")
+st.write("순위를 확인하려면")
+st.write("왼쪽 사이드바에서 순위 확인 버튼을 누른 뒤")
+st.write("지역을 클릭해서 팝업을 확인해주세요.")
 
 # 대한민국 지도 경계 데이터
 with open("SIDO_MAP_2022_cp949.json", "r", encoding='cp949') as f:
@@ -59,7 +62,7 @@ if "show_pm" not in st.session_state:
     st.session_state.show_pm = False
     
 # 사이드바에 지도 초기화 버튼을 추가
-show_init_state = st.sidebar.button("지도 초기화")
+show_init_state = st.sidebar.button("순위 확인")
 if show_init_state:
     st.session_state.show_init_state = True
     st.session_state.show_density = False
@@ -84,15 +87,31 @@ if show_pm:
 # 지도 객체를 생성합니다.
 m = folium.Map(location=[36, 128], zoom_start=6.5)
 
-#############################################################
+############################################################
+
+for feature in geo_data['features']:
+    ctp_kor_nm = feature['properties']['CTP_KOR_NM']
+    tmp1 = new_pop_den_df.loc[new_pop_den_df["행정구역별"] == ctp_kor_nm, 'rank'].values
+    tmp2 = new_pm25_df.loc[new_pm25_df["구분(1)"] == ctp_kor_nm, 'rank'].values    
+    data1 = tmp1
+    data2 = tmp2
+    feature['properties']['인구밀도 순위'] = str(data1[0]) if len(data1) > 0 else ''
+    feature['properties']['공기질 순위'] = str(data2[0]) if len(data2) > 0 else ''
+
+##############################################################################################
+
+##############################################################################################
 
 # GeoJSON 레이어를 지도에 추가
 folium.GeoJson(
     geo_data,
     name = 'geojson',
     style_function = lambda x: {'fillColor': '#ffffff00'},
-    highlight_function = lambda x: {'weight':3, 'color':'blue'},
-    tooltip=folium.GeoJsonTooltip(fields=['CTP_KOR_NM']),              
+    highlight_function = lambda x: {'weight':3, 'color':'blue'},    
+    popup=folium.GeoJsonPopup(fields=['인구밀도 순위', '공기질 순위'],        
+        labels=True,
+        localize=True,        
+        parse_html=True)                 
 ).add_to(m)
 
 ##################################################################################
@@ -125,3 +144,7 @@ elif st.session_state.show_pm:
 
 # 지도를 표시
 st_folium(m, width=700, height=600)
+
+# 지표를 체크박스로 선택하는 기능
+# 점수 합산 데이터 프레임 만들기
+# 선택한 지표들로 점수를 합산하는 기능
