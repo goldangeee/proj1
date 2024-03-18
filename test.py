@@ -46,7 +46,22 @@ new_pm25_df['rank'] = new_pm25_df['2023.07'].rank(method='min').astype(int)
 # 에러 해결을 위해 안전한 숫자로 변환
 res_pm25_df['2023.07'] = pd.to_numeric(res_pm25_df['2023.07'], errors='coerce')
 
+###################################################################################################################
+
+# 교통사고 사망자 수 데이터를 불러옵니다.
+car_acc = pd.read_csv("car_acc.csv", encoding='utf-8')# 인구10만명당 사망자수 (명)
+car_acc_df = pd.DataFrame(car_acc)
+
+filtered_car_acc_df_1 = car_acc_df[(car_acc_df['행정구역별(1)'] != '총계')&(car_acc_df['행정구역별(2)'] == '소계')]
+filtered_car_acc_df_2 = filtered_car_acc_df_1[['행정구역별(1)',filtered_car_acc_df_1.columns[6]]]
+filtered_car_acc_df_2.iloc[:, 1] = pd.to_numeric(filtered_car_acc_df_2.iloc[:, 1], errors='coerce') # 에러 해결을 위해 안전한 숫자로 변환
+filtered_car_acc_df_2['rank'] = filtered_car_acc_df_2['2020.4'].rank(method='min').astype(int) # 데이터프레임에 "rank" 열 생성과 순위 추가
+
+# 강원특별자치도를 강원도로 통일
+filtered_car_acc_df_2['행정구역별(1)'].replace("강원특별자치도", "강원도", inplace=True)
+
 ###################################################################################
+
 # 사이드바
 
 # 세션 상태에 'init_state' 속성이 없으면 False로 초기화
@@ -60,6 +75,10 @@ if "show_density" not in st.session_state:
 # 세션 상태에 'show_pm' 속성이 없으면 False로 초기화
 if "show_pm" not in st.session_state:
     st.session_state.show_pm = False
+
+# 세션 상태에 'show_caracc' 속성이 없으면 False로 초기화
+if "show_caracc" not in st.session_state:
+    st.session_state.show_caracc = False
     
 # 사이드바에 지도 초기화 버튼을 추가
 show_init_state = st.sidebar.button("순위 확인")
@@ -67,6 +86,7 @@ if show_init_state:
     st.session_state.show_init_state = True
     st.session_state.show_density = False
     st.session_state.show_pm = False
+    st.session_state.show_caracc = False 
 
 # 사이드바에 인구 밀도 버튼을 추가
 show_density = st.sidebar.button("지역별 인구밀도")
@@ -74,6 +94,7 @@ if show_density:
     st.session_state.show_init_state = False
     st.session_state.show_density = True
     st.session_state.show_pm = False
+    st.session_state.show_caracc = False 
 
 # 사이드바에 미세먼지 버튼을 추가
 show_pm = st.sidebar.button("지역별 초미세먼지 농도")
@@ -81,6 +102,15 @@ if show_pm:
     st.session_state.show_init_state = False
     st.session_state.show_density = False
     st.session_state.show_pm = True    
+    st.session_state.show_caracc = False 
+
+# 사이드바에 교통사고 사망자 수 버튼을 추가
+show_caracc = st.sidebar.button("교통사고 사망자 수")
+if show_caracc:
+    st.session_state.show_init_state = False
+    st.session_state.show_density = False
+    st.session_state.show_pm = False   
+    st.session_state.show_caracc = True 
 
 #########################################################
 
@@ -91,14 +121,12 @@ m = folium.Map(location=[36, 128], zoom_start=6.5)
 
 for feature in geo_data['features']:
     ctp_kor_nm = feature['properties']['CTP_KOR_NM']
-    tmp1 = new_pop_den_df.loc[new_pop_den_df["행정구역별"] == ctp_kor_nm, 'rank'].values
-    tmp2 = new_pm25_df.loc[new_pm25_df["구분(1)"] == ctp_kor_nm, 'rank'].values    
-    data1 = tmp1
-    data2 = tmp2
+    data1 = new_pop_den_df.loc[new_pop_den_df["행정구역별"] == ctp_kor_nm, 'rank'].values
+    data2 = new_pm25_df.loc[new_pm25_df["구분(1)"] == ctp_kor_nm, 'rank'].values
+    data3 = filtered_car_acc_df_2.loc[filtered_car_acc_df_2.iloc[:, 0] == ctp_kor_nm, 'rank'].values   
     feature['properties']['인구밀도 순위'] = str(data1[0]) if len(data1) > 0 else ''
     feature['properties']['공기질 순위'] = str(data2[0]) if len(data2) > 0 else ''
-
-##############################################################################################
+    feature['properties']['교통사고 순위'] = str(data3[0]) if len(data3) > 0 else ''
 
 ##############################################################################################
 
@@ -108,7 +136,7 @@ folium.GeoJson(
     name = 'geojson',
     style_function = lambda x: {'fillColor': '#ffffff00'},
     highlight_function = lambda x: {'weight':3, 'color':'blue'},    
-    popup=folium.GeoJsonPopup(fields=['인구밀도 순위', '공기질 순위'],        
+    popup=folium.GeoJsonPopup(fields=['인구밀도 순위', '공기질 순위','교통사고 순위'],        
         labels=True,
         localize=True,        
         parse_html=True)                 
@@ -122,8 +150,8 @@ if st.session_state.show_density:
         geo_data=geo_data,
         name='choropleth1',
         data=pop_den_df,
-        columns=['행정구역별', '2022'],  # 여기서 '2022'는 인구 밀도 데이터 컬럼명에 맞게 조정
-        key_on='feature.properties.CTP_KOR_NM',  # GeoJSON의 지역 이름 필드에 맞게 조정
+        columns=['행정구역별', '2022'],  
+        key_on='feature.properties.CTP_KOR_NM',  
         fill_color='YlOrRd',  # 색상 팔레트
         fill_opacity=0.7,
         line_opacity=0.2,
@@ -136,10 +164,22 @@ elif st.session_state.show_pm:
         data=res_pm25_df,
         columns=['구분(1)', '2023.07'],  
         key_on='feature.properties.CTP_KOR_NM',
-        fill_color='YlOrRd',  # 색상 팔레트
+        fill_color='YlOrRd',  
         fill_opacity=0.7,
         line_opacity=0.2,
         legend_name='(단위: μg/m³)'
+    ).add_to(m)
+elif st.session_state.show_caracc:
+    folium.Choropleth(
+        geo_data=geo_data,
+        name='choropleth3',
+        data=filtered_car_acc_df_2,
+        columns=['행정구역별(1)', '2020.4'],  
+        key_on='feature.properties.CTP_KOR_NM',
+        fill_color='YlOrRd',  
+        fill_opacity=0.7,
+        line_opacity=0.2,
+        legend_name='(인구10만명당 사망자수 (명))'
     ).add_to(m)
 
 # 지도를 표시
