@@ -4,69 +4,76 @@ import folium
 import json
 import pandas as pd
 
-# 상단에 타이틀과 설명을 배치
 st.title("My ideal region")
-# 사이드바
-# 세션 상태에 특정 속성이 없으면 False로 초기화
-if "init_state" not in st.session_state:
-    st.session_state.init_state = False
-if "show_density" not in st.session_state:
-    st.session_state.show_density = False
-if "show_pm" not in st.session_state:
-    st.session_state.show_pm = False
-if "show_caracc" not in st.session_state:
-    st.session_state.show_caracc = False   
-if "show_recommend" not in st.session_state:
-    st.session_state.show_recommend = False   
-# 홈 버튼
-show_init_state = st.sidebar.button("홈")
-if show_init_state:
-    st.session_state.show_init_state = True
-    st.session_state.show_density = False
-    st.session_state.show_pm = False
-    st.session_state.show_caracc = False
-    st.session_state.show_recommend = False  
-# 인구 밀도 버튼 및 체크박스
-show_density = st.sidebar.button("[인구] 인구 밀도")  # 버튼
-if "density_checked" not in st.session_state:  # 세션 상태에 체크박스 상태를 저장할 키가 없으면 초기화
-    st.session_state.density_checked = False
-density_checked = st.sidebar.checkbox("인구 밀도", key="density_checked")  # 체크박스
-if show_density:  # 버튼 눌림 또는 체크박스 체크 상태일 때
-    st.session_state.show_init_state = False
-    st.session_state.show_density = True
-    st.session_state.show_pm = False
-    st.session_state.show_caracc = False
-    st.session_state.show_recommend = False 
-# 초미세먼지 버튼 및 체크박스
-show_pm = st.sidebar.button("[환경] 초미세먼지 농도")  # 버튼
-if "pm_checked" not in st.session_state:
-    st.session_state.pm_checked = False
-pm_checked = st.sidebar.checkbox("초미세먼지 농도", key="pm_checked")  # 체크박스
-if show_pm:
-    st.session_state.show_init_state = False
-    st.session_state.show_density = False
-    st.session_state.show_pm = True    
-    st.session_state.show_caracc = False
-    st.session_state.show_recommend = False  
-# 교통사고 사망자 수 버튼 및 체크박스
-show_caracc = st.sidebar.button("[안전] 교통사고 사망자 수")  # 버튼
-if "caracc_checked" not in st.session_state:
-    st.session_state.caracc_checked = False
-caracc_checked = st.sidebar.checkbox("교통사고 사망자 수", key="caracc_checked")  # 체크박스
-if show_caracc:
-    st.session_state.show_init_state = False
-    st.session_state.show_density = False
-    st.session_state.show_pm = False   
-    st.session_state.show_caracc = True
-    st.session_state.show_recommend = False 
-# 지역 추천
-show_recommend = st.sidebar.button("지역 추천")
-if show_recommend:
-    st.session_state.show_init_state = False
-    st.session_state.show_density = False
-    st.session_state.show_pm = False
-    st.session_state.show_caracc = False
-    st.session_state.show_recommend = True      
+
+with st.sidebar: # 사이드바
+    st.write("<b>코로플레스 맵 보기</b>", unsafe_allow_html=True)    
+    if "init_state" not in st.session_state: # 세션 상태에 특정 속성이 없으면 False로 초기화
+        st.session_state.init_state = False
+    if "show_density" not in st.session_state:
+        st.session_state.show_density = False
+    if "show_pm" not in st.session_state:
+        st.session_state.show_pm = False
+    if "show_caracc" not in st.session_state:
+        st.session_state.show_caracc = False   
+    if "show_recommend" not in st.session_state:
+        st.session_state.show_recommend = False       
+    # 인구 밀도 버튼
+    show_density = st.sidebar.button("인구 밀도")  # 버튼
+    if "density_checked" not in st.session_state:  # 세션 상태에 체크박스 상태를 저장할 키가 없으면 초기화
+        st.session_state.density_checked = False
+    if show_density:
+        st.session_state.show_init_state = False
+        st.session_state.show_density = True
+        st.session_state.show_pm = False
+        st.session_state.show_caracc = False
+        st.session_state.show_recommend = False 
+    # 초미세먼지 버튼
+    show_pm = st.sidebar.button("초미세먼지 농도")  # 버튼
+    if "pm_checked" not in st.session_state:
+        st.session_state.pm_checked = False
+    if show_pm:
+        st.session_state.show_init_state = False
+        st.session_state.show_density = False
+        st.session_state.show_pm = True    
+        st.session_state.show_caracc = False
+        st.session_state.show_recommend = False  
+    # 교통사고 사망자 수 버튼
+    show_caracc = st.sidebar.button("교통사고 사망자 수")  # 버튼
+    if "caracc_checked" not in st.session_state:
+        st.session_state.caracc_checked = False
+    if show_caracc:
+        st.session_state.show_init_state = False
+        st.session_state.show_density = False
+        st.session_state.show_pm = False   
+        st.session_state.show_caracc = True
+        st.session_state.show_recommend = False    
+    st.write(" ")
+    st.write("<b>체크박스 선택 후</b>", unsafe_allow_html=True)
+    st.write("<b>지역추천 버튼 클릭</b>", unsafe_allow_html=True)    
+    # 인구 밀도 체크박스
+    density_checked = st.checkbox("인구 밀도", key="density_checked")  # 체크박스
+    # 초미세먼지 농도 체크박스
+    pm_checked = st.checkbox("초미세먼지 농도", key="pm_checked")  # 체크박스
+    # 교통사고 사망자 수 체크박스  
+    caracc_checked = st.checkbox("교통사고 사망자 수", key="caracc_checked")  # 체크박스  
+    # 지역 추천 버튼
+    show_recommend = st.button("지역 추천")       
+    if show_recommend:
+        st.session_state.show_init_state = False
+        st.session_state.show_density = False
+        st.session_state.show_pm = False
+        st.session_state.show_caracc = False
+        st.session_state.show_recommend = True
+    st.write(" ")
+    # 초기화 버튼
+    show_init_state = st.sidebar.button("초기화")
+    if show_init_state:
+        st.session_state.show_init_state = True
+        st.session_state.show_density = False
+        st.session_state.show_pm = False
+        st.session_state.show_caracc = False
+        st.session_state.show_recommend = False       
 
 # 화면 분할
 col1, col2 = st.columns([5, 4])
@@ -115,8 +122,6 @@ for feature in geo_data['features']:
     feature['properties']['공기질 순위 : '] = str(data2[0]) if len(data2) > 0 else ''
     feature['properties']['교통안전 순위 : '] = str(data3[0]) if len(data3) > 0 else ''
 
-##############################################################################################
-
 # GeoJSON 레이어를 지도에 추가
 folium.GeoJson(
     geo_data,
@@ -129,9 +134,7 @@ folium.GeoJson(
         parse_html=True)                 
 ).add_to(m)
 
-##################################################################################
-
-# 버튼을 누르면, Choropleth 맵을 생성
+# 버튼을 누르면, 코로플레스 맵을 생성
 if st.session_state.show_density:    
     folium.Choropleth(
         geo_data=geo_data,
@@ -139,7 +142,7 @@ if st.session_state.show_density:
         data=new_pop_den_df,
         columns=['지역', '인구 밀도'],  
         key_on='feature.properties.CTP_KOR_NM',  
-        fill_color='YlOrRd',  # 색상 팔레트
+        fill_color='YlOrRd',
         fill_opacity=0.7,
         line_opacity=0.2,
         legend_name='(단위: 명/㎢)'
@@ -210,5 +213,4 @@ if caracc_checked:
 if st.session_state.show_recommend:
     with col2:
         st.write(f"포인트가 낮을수록 추천하는 지역입니다.")
-        st.write(df2.sort_values(by='포인트'))
-        
+        st.write(df2.sort_values(by='포인트'))        
